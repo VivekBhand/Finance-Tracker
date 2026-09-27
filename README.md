@@ -1,91 +1,80 @@
-# Micro-Savings Goal Tracker 🎯
+# Smart AI Finance Tracker 🎯🤖
 
-A local-first Flutter app for tracking everyday savings, spending, and goals without the clutter of a traditional finance dashboard.
+A local-first, privacy-guaranteed Flutter app for tracking micro-savings, managing portfolio wealth, ingesting financial statements via AI, and receiving static investment insight cards — at **$0 infrastructure cost**.
 
-This version is built around a simple principle: your transaction history is the real source of truth. Every saving, spend, and goal reallocation updates the app in real time, while keeping the experience fast and lightweight.
+---
 
-## What this app does
+## 🌟 What's New: AI & Smart Portfolio Features
 
-- Tracks multiple savings goals at once
-- Supports an overall savings view alongside goal-specific progress
-- Lets goals be open-ended or include a target amount when needed
-- Uses INR as the default currency experience
-- Allows custom categories and quick category actions
-- Exposes time-filtered history and daily/category analytics
-- Lets users create new goals directly while adding a transaction
-- Supports editing and reassigning previous transactions to a different goal
+- **🤖 Self-Hosted Free AI Backend**: Powered by **Qwen2.5-1.5B-Instruct** running on a free Hugging Face Space (FastAPI + Docker). No user API keys or registration required.
+- **🛡️ On-Device PII Protection**: Redacts sensitive personal information (PAN, Aadhaar, Bank Account #s, Phone Numbers, Emails, IFSC) on your device *before* any text leaves your phone.
+- **📄 Document Ingestion Engine**: Parses CAMS/KFintech CAS PDFs and Bank CSV statement exports with password decryption support.
+- **📈 Keyless Indian Market Data**: Fetches live NSE stock prices (`nseindia.com`) and AMFI mutual fund NAVs (`api.mfapi.in`) for free without any API keys.
+- **💡 Hybrid Static AI Insights**: Displays color-coded cards on your portfolio dashboard for concentration risk (>40%), underperforming assets (>10% loss), FD vs inflation warnings, and goal daily savings pace.
+- **💼 Total Net Worth Dashboard**: Tracks your micro-savings goals alongside equities, mutual funds, FDs, gold, PPF, and bonds.
 
-## Core experience
+---
 
-The app is intentionally designed around a goal-first but flexible workflow:
+## Core Experience & Feature Highlights
 
-1. Create one or more goals with an icon and optional target.
-2. Add daily saves or spends from the dashboard.
-3. Choose whether the entry belongs to overall savings or a specific goal.
-4. Review progress, history, and analytics by category and time period.
-5. Edit older transactions when priorities or goal assignments change.
+- **Multi-goal tracking** with progress percentages and visual progress rings
+- **Overall savings overview** alongside goal-specific tracking
+- **Quick-save / quick-spend actions** with customized categories
+- **Interactive Analytics** featuring `fl_chart` donut and daily savings bar charts
+- **Chronological History Ledger** with swipe-to-delete and instant goal recalculation
+- **Portfolio & Net Worth View** with live gain/loss badges (`+14.2%` green / `-11.5%` red)
+- **Document Upload** view with live PII sanitization preview
 
-## Feature highlights
+---
 
-- Multi-goal tracking with progress percentages and visual indicators
-- Goal cards for current progress, completion state, and open goals
-- Overall savings overview at the top of the dashboard
-- Quick-save / quick-spend actions with a polished bottom-sheet entry flow
-- Goal search-and-create workflow directly from the transaction modal
-- Custom categories for personal finance habits
-- Time-range filters in the history screen
-- Daily and category summaries for financial trends
+## 🏗️ Tech Stack
 
-## Tech stack
+- **Frontend**: Flutter 3.29, Riverpod, Hive NoSQL, `fl_chart`, `syncfusion_flutter_pdf`, `csv`, `dio`
+- **Backend (Optional AI)**: Python 3.11, FastAPI, `llama-cpp-python`, Docker, Hugging Face Spaces (CPU Basic)
+- **Market Feeds**: NSE India Direct API (Cookie handshake), AMFI API (`mfapi.in`)
 
-- Flutter
-- Riverpod
-- Hive
-- fl_chart
+---
 
-## Architecture note
+## 🔒 Architecture Note: Source of Truth & Privacy
 
-> Transactions remain the source of truth.
->
-> Goal totals are derived from transaction records instead of duplicated state, which keeps the app accurate when entries are edited, reassigned, deleted, or moved between goals.
+> **Transactions & Holdings are the Source of Truth.**
+> 
+> Goal totals and net worth values are dynamically derived from raw transaction logs and holding records. 
+> 
+> **Privacy Guarantee**: All PDF/CSV text extraction and regex PII redaction occur 100% on-device. Your unredacted financial documents never touch any server.
 
-## Getting started
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) installed on your machine.
 
-- Flutter SDK installed and configured on your machine
-
-### Install and run
-
+### Install & Run
 ```bash
 flutter pub get
 flutter run
 ```
 
-For a browser target you can use:
-
+For web target:
 ```bash
 flutter run -d chrome
 ```
 
-## Usage flow
+---
 
-1. Open the app and create a goal or goals.
-2. Tap Save or Spend from the dashboard.
-3. Choose a goal or mark the entry as overall savings.
-4. Review the dashboard summary, goal cards, and recent activity.
-5. Open history to filter and edit transaction entries.
-6. Use analytics to monitor category and day-wise progress.
+## 🤖 Deploying Your Own Free AI Backend (Hugging Face)
 
-## Project goals
+The app connects to a free, public Hugging Face Space by default. To host your own private endpoint:
+1. Go to [huggingface.co/spaces](https://huggingface.co/spaces) $\to$ **New Space**.
+2. Select **Docker SDK** $\to$ **CPU Basic (Free 16 GB RAM)**.
+3. Upload the contents of the `backend/` folder (`app.py`, `Dockerfile`, `requirements.txt`).
+4. Paste your Space URL (`https://<username>-finance-ai.hf.space`) into the app's **Settings** screen.
 
-This app is meant to feel lightweight and useful for everyday money tracking, especially for people who want to:
+---
 
-- save in small, realistic steps
-- organize money by goals without overcomplicating the flow
-- keep everything local and private
-- revisit historical entries without losing context
+## 🧪 Verification & Tests
 
-## Notes
-
-The repository is designed for local-first personal finance tracking and does not depend on remote services or backend infrastructure.
+- **Static Analysis**: `flutter analyze` $\to$ **0 issues**
+- **Unit Tests**: `flutter test` $\to$ **12/12 passed**
+- **Git Branch**: `feature/ai`
