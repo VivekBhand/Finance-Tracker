@@ -47,126 +47,332 @@ class GoalHeroCard extends ConsumerWidget {
       );
     }
 
-    final progress = (goal.currentAmount / goal.targetAmount).clamp(0.0, 1.0);
-    final percentage = (progress * 100).round();
+    final hasTarget = goal.targetAmount != null && goal.targetAmount! > 0;
+    final progress = hasTarget ? (goal.currentAmount / goal.targetAmount!).clamp(0.0, 1.0) : 0.0;
+    final percentage = hasTarget ? (progress * 100).round() : 0;
+    final isComplete = goal.isCompleted;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useCompactLayout = constraints.maxWidth < 460;
+
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 170,
-            height: 170,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: progress),
-              duration: const Duration(milliseconds: 700),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, child) {
-                return Stack(
-                  fit: StackFit.expand,
+          child: useCompactLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircularProgressIndicator(
-                      value: value,
-                      strokeWidth: 16,
-                      backgroundColor: const Color(0xFFEAF9F0),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF2ECF8F),
-                      ),
-                      strokeCap: StrokeCap.round,
-                    ),
                     Center(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: Column(
-                          key: ValueKey('${goal.currentAmount}-${goal.targetAmount}'),
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '\$${goal.currentAmount.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1E1E2D),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'of \$${goal.targetAmount.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                      child: SizedBox(
+                        width: 150,
+                        height: 150,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0, end: progress),
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                CircularProgressIndicator(
+                                  value: value,
+                                  strokeWidth: 14,
+                                  backgroundColor: const Color(0xFFEAF9F0),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF2ECF8F),
+                                  ),
+                                  strokeCap: StrokeCap.round,
+                                ),
+                                Center(
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Column(
+                                      key: ValueKey('${goal.currentAmount}-${goal.targetAmount ?? 'open'}'),
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '₹${goal.currentAmount.toStringAsFixed(0)}',
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: Color(0xFF1E1E2D),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          hasTarget ? 'of ₹${goal.targetAmount!.toStringAsFixed(0)}' : 'target pending',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ],
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  goal.title,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E1E2D),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEAF9F0),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '$percentage% complete',
-                    style: const TextStyle(
-                      color: Color(0xFF1BAA6A),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
+                    const SizedBox(height: 18),
+                    Text(
+                      goal.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E1E2D),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
+                    const SizedBox(height: 10),
+                    if (!hasTarget)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F6FF),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Open goal',
+                          style: TextStyle(
+                            color: Color(0xFF5967FF),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      )
+                    else if (isComplete)
+                      AnimatedScale(
+                        duration: const Duration(milliseconds: 400),
+                        scale: 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF3CC),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFF1B31C)),
+                              SizedBox(width: 6),
+                              Text(
+                                'Goal complete!',
+                                style: TextStyle(
+                                  color: Color(0xFFF1B31C),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF9F0),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '$percentage% complete',
+                          style: const TextStyle(
+                            color: Color(0xFF1BAA6A),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        _MetricChip(
+                          label: 'Saved',
+                          value: '₹${goal.currentAmount.toStringAsFixed(0)}',
+                        ),
+                        _MetricChip(
+                          label: hasTarget ? 'Left' : 'Status',
+                          value: hasTarget
+                              ? '₹${(goal.targetAmount! - goal.currentAmount).clamp(0.0, double.infinity).toStringAsFixed(0)}'
+                              : 'Open',
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
                   children: [
-                    _MetricChip(
-                      label: 'Saved',
-                      value: '\$${goal.currentAmount.toStringAsFixed(0)}',
+                    SizedBox(
+                      width: 170,
+                      height: 170,
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: progress),
+                        duration: const Duration(milliseconds: 700),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, value, child) {
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CircularProgressIndicator(
+                                value: value,
+                                strokeWidth: 16,
+                                backgroundColor: const Color(0xFFEAF9F0),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF2ECF8F),
+                                ),
+                                strokeCap: StrokeCap.round,
+                              ),
+                              Center(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 200),
+                                  child: Column(
+                                    key: ValueKey('${goal.currentAmount}-${goal.targetAmount ?? 'open'}'),
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '₹${goal.currentAmount.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1E1E2D),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        hasTarget ? 'of ₹${goal.targetAmount!.toStringAsFixed(0)}' : 'target pending',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                    const SizedBox(width: 10),
-                    _MetricChip(
-                      label: 'Left',
-                      value: '\$${(goal.targetAmount - goal.currentAmount).clamp(0.0, double.infinity).toStringAsFixed(0)}',
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            goal.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E1E2D),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (!hasTarget)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF3F6FF),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'Open goal',
+                                style: TextStyle(
+                                  color: Color(0xFF5967FF),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          else if (isComplete)
+                            AnimatedScale(
+                              duration: const Duration(milliseconds: 400),
+                              scale: 1,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF3CC),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    Icon(Icons.emoji_events_rounded, size: 14, color: Color(0xFFF1B31C)),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Goal complete!',
+                                      style: TextStyle(
+                                        color: Color(0xFFF1B31C),
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEAF9F0),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '$percentage% complete',
+                                style: const TextStyle(
+                                  color: Color(0xFF1BAA6A),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 18),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _MetricChip(
+                                label: 'Saved',
+                                value: '₹${goal.currentAmount.toStringAsFixed(0)}',
+                              ),
+                              _MetricChip(
+                                label: hasTarget ? 'Left' : 'Status',
+                                value: hasTarget
+                                    ? '₹${(goal.targetAmount! - goal.currentAmount).clamp(0.0, double.infinity).toStringAsFixed(0)}'
+                                    : 'Open',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -139,6 +139,45 @@ void main() {
     expect(dailyTotals[_dateKey(today)], 30.0);
   });
 
+  test('goals can be open-ended without a target amount', () async {
+    final goalId = const Uuid().v4();
+    final goal = Goal(id: goalId, title: 'Emergency Fund', targetAmount: null);
+    await repository.addGoal(goal);
+
+    await repository.addTransaction(
+      Transaction(id: 'open-1', goalId: goalId, amount: 250, type: TransactionType.saving, categoryId: 'salary'),
+    );
+
+    final savedGoal = repository.readGoal(goalId);
+    expect(savedGoal?.targetAmount, isNull);
+    expect(savedGoal?.currentAmount, 250.0);
+    expect(savedGoal?.progressPercent, 0.0);
+  });
+
+  test('updating a transaction moves the amount between goals correctly', () async {
+    final goalA = Goal(id: const Uuid().v4(), title: 'Trip', targetAmount: 1000);
+    final goalB = Goal(id: const Uuid().v4(), title: 'Laptop', targetAmount: 2000);
+
+    await repository.addGoal(goalA);
+    await repository.addGoal(goalB);
+
+    final tx = Transaction(
+      id: 'move-1',
+      goalId: goalA.id,
+      amount: 150,
+      type: TransactionType.saving,
+      categoryId: 'travel',
+    );
+    await repository.addTransaction(tx);
+
+    await repository.updateTransaction(
+      tx.copyWith(goalId: goalB.id),
+    );
+
+    expect(repository.readGoal(goalA.id)?.currentAmount, 0.0);
+    expect(repository.readGoal(goalB.id)?.currentAmount, 150.0);
+  });
+
   test('global transactions do not affect a specific goal total', () async {
     final goalId = const Uuid().v4();
     final goal = Goal(id: goalId, title: 'Vacation', targetAmount: 2000);

@@ -5,6 +5,7 @@ import '../models/transaction.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/app_providers.dart';
 import '../utils/currency.dart';
+import '../widgets/add_transaction_sheet.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -57,6 +58,19 @@ class HistoryScreen extends ConsumerWidget {
                             (c) => c.id == item.categoryId,
                             orElse: () => categories.first,
                           );
+                          void openEditor() {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              backgroundColor: Colors.transparent,
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              builder: (_) => AddTransactionSheet(
+                                isSaving: isSaving,
+                                initialTransaction: item,
+                              ),
+                            );
+                          }
 
                           return Dismissible(
                             key: ValueKey(item.id),
@@ -76,7 +90,13 @@ class HistoryScreen extends ConsumerWidget {
                                 const SnackBar(content: Text('Transaction deleted')),
                               );
                             },
-                            child: Container(
+                            child: Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              child: InkWell(
+                                onTap: openEditor,
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -121,16 +141,29 @@ class HistoryScreen extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                  Text(
-                                    '${isSaving ? '+' : '-'}${CurrencyFormatter.format(item.amount, 'INR')}',
-                                    style: TextStyle(
-                                      color: isSaving
-                                          ? const Color(0xFF1BAA6A)
-                                          : const Color(0xFFE26767),
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '${isSaving ? '+' : '-'}${CurrencyFormatter.format(item.amount, 'INR')}',
+                                        style: TextStyle(
+                                          color: isSaving
+                                              ? const Color(0xFF1BAA6A)
+                                              : const Color(0xFFE26767),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      TextButton.icon(
+                                        onPressed: openEditor,
+                                        icon: const Icon(Icons.edit_outlined, size: 16),
+                                        label: const Text('Edit'),
+                                      ),
+                                    ],
                                   ),
                                 ],
+                              ),
+                                ),
                               ),
                             ),
                           );

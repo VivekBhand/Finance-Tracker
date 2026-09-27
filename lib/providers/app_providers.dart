@@ -33,18 +33,13 @@ final hiveInitializerProvider = FutureProvider<void>((ref) async {
     final box = await Hive.openBox<Category>(HiveBoxes.categories);
     if (box.isEmpty) {
       await box.putAll({
-        'salary': Category(id: 'salary', name: 'Salary', icon: '💰', colorHex: '0xFF1BAA6A', defaultAmount: 2500.0, isSetback: false),
-        'freelance': Category(id: 'freelance', name: 'Freelance', icon: '💼', colorHex: '0xFF4CAF50', defaultAmount: 1200.0, isSetback: false),
-        'coffee': Category(id: 'coffee', name: 'Skipped Coffee', icon: '☕', colorHex: '0xFF8D6E63', defaultAmount: 45.0, isSetback: false),
-        'groceries': Category(id: 'groceries', name: 'Groceries', icon: '🛒', colorHex: '0xFF81C784', defaultAmount: 650.0, isSetback: true),
-        'transport': Category(id: 'transport', name: 'Travel', icon: '🚕', colorHex: '0xFF4FC3F7', defaultAmount: 300.0, isSetback: false),
-        'dining': Category(id: 'dining', name: 'Dining Out', icon: '🍽️', colorHex: '0xFFFFB74D', defaultAmount: 420.0, isSetback: true),
-        'shopping': Category(id: 'shopping', name: 'Shopping', icon: '🛍️', colorHex: '0xFFBA68C8', defaultAmount: 800.0, isSetback: true),
-        'utilities': Category(id: 'utilities', name: 'Bills', icon: '💡', colorHex: '0xFFFFD54F', defaultAmount: 550.0, isSetback: true),
-        'health': Category(id: 'health', name: 'Health', icon: '🏥', colorHex: '0xFFEF5350', defaultAmount: 450.0, isSetback: true),
-        'travel': Category(id: 'travel', name: 'Travel', icon: '✈️', colorHex: '0xFF64B5F6', defaultAmount: 1200.0, isSetback: true),
-        'education': Category(id: 'education', name: 'Education', icon: '📚', colorHex: '0xFF9575CD', defaultAmount: 600.0, isSetback: true),
-        'gift': Category(id: 'gift', name: 'Gift', icon: '🎁', colorHex: '0xFFFF8A80', defaultAmount: 350.0, isSetback: true),
+        'salary': Category(id: 'salary', name: 'Salary', icon: '💰', colorHex: '0xFF1BAA6A', defaultAmount: 2000.0, isSetback: false),
+        'groceries': Category(id: 'groceries', name: 'Groceries', icon: '🛒', colorHex: '0xFF81C784', defaultAmount: 500.0, isSetback: true),
+        'food': Category(id: 'food', name: 'Food', icon: '🍽️', colorHex: '0xFFFFB74D', defaultAmount: 350.0, isSetback: true),
+        'transport': Category(id: 'transport', name: 'Transport', icon: '🚕', colorHex: '0xFF4FC3F7', defaultAmount: 250.0, isSetback: true),
+        'shopping': Category(id: 'shopping', name: 'Shopping', icon: '🛍️', colorHex: '0xFFBA68C8', defaultAmount: 600.0, isSetback: true),
+        'bills': Category(id: 'bills', name: 'Bills', icon: '💡', colorHex: '0xFFFFD54F', defaultAmount: 500.0, isSetback: true),
+        'health': Category(id: 'health', name: 'Health', icon: '🏥', colorHex: '0xFFEF5350', defaultAmount: 400.0, isSetback: true),
       });
     }
   }
@@ -127,6 +122,8 @@ final recentTransactionsProvider = Provider<List<Transaction>>((ref) {
 });
 
 class ActiveGoalIdNotifier extends Notifier<String?> {
+  static const overallSavingsId = '__overall_savings__';
+
   @override
   String? build() {
     final box = ref.read(settingsBoxProvider);
@@ -142,10 +139,11 @@ class ActiveGoalIdNotifier extends Notifier<String?> {
     return savedId;
   }
 
-  Future<void> setActiveGoal(String id) async {
+  Future<void> setActiveGoal(String? id) async {
     final box = ref.read(settingsBoxProvider);
-    await box.put('activeGoalId', id);
-    state = id;
+    final storedId = id ?? overallSavingsId;
+    await box.put('activeGoalId', storedId);
+    state = storedId;
   }
 }
 
@@ -158,6 +156,7 @@ final activeGoalProvider = Provider<Goal?>((ref) {
   if (goals.isEmpty) return null;
 
   final activeId = ref.watch(activeGoalIdProvider);
+  if (activeId == ActiveGoalIdNotifier.overallSavingsId) return null;
   final activeGoal = activeId != null && goals.any((g) => g.id == activeId)
       ? goals.firstWhere((g) => g.id == activeId)
       : goals.first;
@@ -227,6 +226,14 @@ class TransactionsNotifier extends Notifier<List<Transaction>> {
     final repository = ref.read(goalRepositoryProvider);
     await repository.addTransaction(transaction);
     
+    final box = ref.read(transactionsBoxProvider);
+    state = box.values.toList().reversed.toList();
+  }
+
+  Future<void> updateTransaction(Transaction transaction) async {
+    final repository = ref.read(goalRepositoryProvider);
+    await repository.updateTransaction(transaction);
+
     final box = ref.read(transactionsBoxProvider);
     state = box.values.toList().reversed.toList();
   }

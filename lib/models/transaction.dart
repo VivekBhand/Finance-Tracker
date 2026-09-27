@@ -24,6 +24,26 @@ class Transaction extends HiveObject {
   String? note;
   DateTime timestamp;
 
+  Transaction copyWith({
+    String? id,
+    String? goalId,
+    double? amount,
+    TransactionType? type,
+    String? categoryId,
+    String? note,
+    DateTime? timestamp,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      goalId: goalId ?? this.goalId,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      categoryId: categoryId ?? this.categoryId,
+      note: note ?? this.note,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
+
   double get signedAmount {
     if (type == TransactionType.saving) return amount;
     return -amount;

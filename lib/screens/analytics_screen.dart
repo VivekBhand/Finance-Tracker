@@ -14,6 +14,7 @@ class AnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions = ref.watch(filteredTransactionsProvider);
     final categoryTotals = ref.watch(categoryAnalyticsProvider);
+    final categorySpendTotals = ref.watch(categorySpendingProvider);
     final dailyTrend = ref.watch(dailyTrendProvider);
     final allCategories = ref.watch(categoriesBoxProvider).values.toList();
 
@@ -54,7 +55,7 @@ class AnalyticsScreen extends ConsumerWidget {
               if (categoryTotals.isEmpty)
                 const Center(child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Text('No category data for this period.'),
+                  child: Text('No saved category data for this period.'),
                 ))
               else
                 SizedBox(
@@ -63,7 +64,26 @@ class AnalyticsScreen extends ConsumerWidget {
                     PieChartData(
                       sectionsSpace: 2,
                       centerSpaceRadius: 40,
-                      sections: _getSections(categoryTotals, allCategories),
+                      sections: _getSections(categoryTotals, allCategories, 'Saved'),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              const Text('Spend Split', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              if (categorySpendTotals.isEmpty)
+                const Center(child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('No spend category data for this period.'),
+                ))
+              else
+                SizedBox(
+                  height: 220,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 40,
+                      sections: _getSections(categorySpendTotals, allCategories, 'Spent'),
                     ),
                   ),
                 ),
@@ -121,7 +141,7 @@ class AnalyticsScreen extends ConsumerWidget {
     );
   }
 
-  List<PieChartSectionData> _getSections(Map<String, double> categoryTotals, List<dynamic> categories) {
+  List<PieChartSectionData> _getSections(Map<String, double> categoryTotals, List<dynamic> categories, String sectionName) {
     if (categoryTotals.isEmpty) return [PieChartSectionData(value: 1, title: '', color: Colors.grey.shade300)];
 
     final total = categoryTotals.values.fold<double>(0, (sum, value) => sum + value);
@@ -138,23 +158,26 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return categoryTotals.entries.toList().asMap().entries.map((entry) {
       final index = entry.key;
+      final categoryId = entry.value.key;
       dynamic category;
       for (final item in categories) {
-        if (item.id == entry.value.key) {
+        if (item.id == categoryId) {
           category = item;
           break;
         }
       }
+      final name = category?.name ?? categoryId;
       final color = category != null
           ? Color(int.tryParse(category.colorHex.replaceFirst('0x', '0xFF')) ?? 0xFF1BAA6A)
           : colors[index % colors.length];
       final value = entry.value.value;
+      final percent = total == 0 ? 0.0 : (value / total) * 100;
       return PieChartSectionData(
         value: value,
-        title: '${((value / total) * 100).clamp(0, 100).toStringAsFixed(0)}%',
+        title: '$name\n${percent.toStringAsFixed(0)}%',
         color: color,
         radius: 56,
-        titleStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
       );
     }).toList();
   }

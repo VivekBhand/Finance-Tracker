@@ -78,6 +78,19 @@ class GoalRepository {
     }
   }
 
+  Future<void> updateTransaction(Transaction transaction) async {
+    final previous = _transactionsBox.get(transaction.id);
+    await _transactionsBox.put(transaction.id, transaction);
+
+    final oldGoalId = previous?.goalId;
+    if (oldGoalId != null) {
+      await syncGoalAmount(oldGoalId);
+    }
+    if (transaction.goalId != null) {
+      await syncGoalAmount(transaction.goalId!);
+    }
+  }
+
   Future<void> deleteTransaction(String transactionId) async {
     final transaction = _transactionsBox.get(transactionId);
     if (transaction == null) return;

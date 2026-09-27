@@ -4,7 +4,7 @@ class Goal extends HiveObject {
   Goal({
     required this.id,
     required this.title,
-    required this.targetAmount,
+    this.targetAmount,
     this.currentAmount = 0.0,
     this.deadline,
     this.iconPath,
@@ -12,7 +12,7 @@ class Goal extends HiveObject {
 
   String id;
   String title;
-  double targetAmount;
+  double? targetAmount;
   double currentAmount;
   DateTime? deadline;
   String? iconPath;
@@ -36,11 +36,11 @@ class Goal extends HiveObject {
   }
 
   double get progressPercent {
-    if (targetAmount <= 0) return 0;
-    return (currentAmount / targetAmount).clamp(0.0, 1.0);
+    if (targetAmount == null || targetAmount! <= 0) return 0;
+    return (currentAmount / targetAmount!).clamp(0.0, 1.0);
   }
 
-  bool get isCompleted => currentAmount >= targetAmount;
+  bool get isCompleted => targetAmount != null && currentAmount >= targetAmount!;
 }
 
 class GoalAdapter extends TypeAdapter<Goal> {
@@ -53,8 +53,8 @@ class GoalAdapter extends TypeAdapter<Goal> {
     return Goal(
       id: fields['id'] as String,
       title: fields['title'] as String,
-      targetAmount: (fields['targetAmount'] as num).toDouble(),
-      currentAmount: (fields['currentAmount'] as num).toDouble(),
+      targetAmount: fields['targetAmount'] == null ? null : (fields['targetAmount'] as num).toDouble(),
+      currentAmount: (fields['currentAmount'] as num? ?? 0).toDouble(),
       deadline: fields['deadline'] == null ? null : DateTime.parse(fields['deadline'] as String),
       iconPath: fields['iconPath'] as String?,
     );

@@ -1,47 +1,91 @@
 # Micro-Savings Goal Tracker 🎯
 
-A local-first, highly reactive Flutter application designed to help you reach your big financial goals through everyday micro-decisions.
+A local-first Flutter app for tracking everyday savings, spending, and goals without the clutter of a traditional finance dashboard.
 
-Traditional budgeting apps focus on monthly bills. This app focuses entirely on the *micro-choices* you make throughout the day. Skipped a $5 coffee? Add it as a **Save**. Gave in to a $10 impulse snack? Log it as a **Setback**. 
+This version is built around a simple principle: your transaction history is the real source of truth. Every saving, spend, and goal reallocation updates the app in real time, while keeping the experience fast and lightweight.
 
-By tracking these small daily choices, you build accountability and actually see how your everyday habits affect your long-term goals.
+## What this app does
 
-## ✨ Features
-* **Multi-Goal Tracking:** Manage multiple savings goals simultaneously (e.g., "MacBook Pro", "Japan Trip", "Emergency Fund").
-* **Gamified Micro-Savings:** Quickly log "+" Saves and "-" Setbacks using one-tap customizable category chips.
-* **Reactive Dashboard:** A beautiful hero progress ring that updates instantly as you log transactions, showing exact amounts and percentage to completion.
-* **Offline-First Persistence:** Built on **Hive NoSQL**. Your data never leaves your device and requires zero internet connection.
-* **Analytics & Insights:** Interactive donut charts (`fl_chart`) break down your savings and spending habits by category.
-* **Full History Ledger:** Chronological transaction history with swipe-to-delete functionality that instantly recalculates your net goal progress.
+- Tracks multiple savings goals at once
+- Supports an overall savings view alongside goal-specific progress
+- Lets goals be open-ended or include a target amount when needed
+- Uses INR as the default currency experience
+- Allows custom categories and quick category actions
+- Exposes time-filtered history and daily/category analytics
+- Lets users create new goals directly while adding a transaction
+- Supports editing and reassigning previous transactions to a different goal
 
-## 🏗️ Architecture & Tech Stack
-* **Framework:** Flutter (Channel stable, 3.29+)
-* **State Management:** [Riverpod](https://riverpod.dev/) (`flutter_riverpod`)
-* **Local Storage:** [Hive](https://pub.dev/packages/hive) (Explicit manual `TypeAdapter`s for stability)
-* **Charting:** [fl_chart](https://pub.dev/packages/fl_chart)
+## Core experience
 
-### Core State Philosophy
-> **"Transactions are the Source of Truth"**
-> The app never relies on stale cached goal totals. The current amount saved for any goal is dynamically calculated on the fly from the raw transaction logs. When a transaction is deleted, the repository cascades the recalculation flawlessly.
+The app is intentionally designed around a goal-first but flexible workflow:
 
-## 🚀 Getting Started
+1. Create one or more goals with an icon and optional target.
+2. Add daily saves or spends from the dashboard.
+3. Choose whether the entry belongs to overall savings or a specific goal.
+4. Review progress, history, and analytics by category and time period.
+5. Edit older transactions when priorities or goal assignments change.
+
+## Feature highlights
+
+- Multi-goal tracking with progress percentages and visual indicators
+- Goal cards for current progress, completion state, and open goals
+- Overall savings overview at the top of the dashboard
+- Quick-save / quick-spend actions with a polished bottom-sheet entry flow
+- Goal search-and-create workflow directly from the transaction modal
+- Custom categories for personal finance habits
+- Time-range filters in the history screen
+- Daily and category summaries for financial trends
+
+## Tech stack
+
+- Flutter
+- Riverpod
+- Hive
+- fl_chart
+
+## Architecture note
+
+> Transactions remain the source of truth.
+>
+> Goal totals are derived from transaction records instead of duplicated state, which keeps the app accurate when entries are edited, reassigned, deleted, or moved between goals.
+
+## Getting started
 
 ### Prerequisites
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) installed on your machine.
 
-### Installation
-1. Clone the repository.
-2. Fetch dependencies:
-   ```bash
-   flutter pub get
-   ```
-3. Run the application (Web, Android, iOS, or Windows Desktop):
-   ```bash
-   flutter run -d chrome
-   ```
+- Flutter SDK installed and configured on your machine
 
-## 📸 Usage Workflow
-1. **Onboarding:** Set up your very first target (e.g., $1,500).
-2. **Dashboard:** Tap **+ Save** or **- Spend** to open the transaction entry sheet.
-3. **Analytics:** Navigate to the middle tab to see your visual breakdown.
-4. **Settings:** Switch between active goals or adjust your global currency preference.
+### Install and run
+
+```bash
+flutter pub get
+flutter run
+```
+
+For a browser target you can use:
+
+```bash
+flutter run -d chrome
+```
+
+## Usage flow
+
+1. Open the app and create a goal or goals.
+2. Tap Save or Spend from the dashboard.
+3. Choose a goal or mark the entry as overall savings.
+4. Review the dashboard summary, goal cards, and recent activity.
+5. Open history to filter and edit transaction entries.
+6. Use analytics to monitor category and day-wise progress.
+
+## Project goals
+
+This app is meant to feel lightweight and useful for everyday money tracking, especially for people who want to:
+
+- save in small, realistic steps
+- organize money by goals without overcomplicating the flow
+- keep everything local and private
+- revisit historical entries without losing context
+
+## Notes
+
+The repository is designed for local-first personal finance tracking and does not depend on remote services or backend infrastructure.
