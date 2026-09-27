@@ -25,22 +25,41 @@ class AiExtractionService {
 
   /// Extract investment holdings from sanitized document text.
   Future<List<Map<String, dynamic>>> extractHoldings(String sanitizedText) async {
-    final response = await _dio.post('$endpointUrl/parse', data: {
-      'text': sanitizedText,
-      'task': 'extract_holdings',
-    });
-    final parsed = jsonDecode(response.data['result'] as String);
-    return List<Map<String, dynamic>>.from(parsed['holdings'] ?? []);
+    try {
+      final response = await _dio.post('$endpointUrl/parse', data: {
+        'text': sanitizedText,
+        'task': 'extract_holdings',
+      });
+      final parsed = jsonDecode(response.data['result'] as String);
+      return List<Map<String, dynamic>>.from(parsed['holdings'] ?? []);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw AiServiceException(
+          'AI Endpoint 404: The Hugging Face Space URL "$endpointUrl" is not active or invalid. Please check Settings.',
+        );
+      }
+      throw AiServiceException(
+        'AI Backend Error (${e.response?.statusCode ?? 'Network'}): ${e.message}',
+      );
+    } catch (e) {
+      throw AiServiceException('Failed to process AI response: $e');
+    }
   }
 
   /// Extract bank transactions from sanitized statement text.
   Future<List<Map<String, dynamic>>> extractTransactions(String sanitizedText) async {
-    final response = await _dio.post('$endpointUrl/parse', data: {
-      'text': sanitizedText,
-      'task': 'extract_transactions',
-    });
-    final parsed = jsonDecode(response.data['result'] as String);
-    return List<Map<String, dynamic>>.from(parsed['transactions'] ?? []);
+    try {
+      final response = await _dio.post('$endpointUrl/parse', data: {
+        'text': sanitizedText,
+        'task': 'extract_transactions',
+      });
+      final parsed = jsonDecode(response.data['result'] as String);
+      return List<Map<String, dynamic>>.from(parsed['transactions'] ?? []);
+    } on DioException catch (e) {
+      throw AiServiceException('AI Backend Error (${e.response?.statusCode}): ${e.message}');
+    } catch (e) {
+      throw AiServiceException('Failed to process transactions: $e');
+    }
   }
 
   /// Generate AI-powered portfolio insights.
@@ -48,12 +67,24 @@ class AiExtractionService {
     required String portfolioSummary,
     required String goalsSummary,
   }) async {
-    final response = await _dio.post('$endpointUrl/parse', data: {
-      'text': goalsSummary,
-      'task': 'generate_insights',
-      'context': portfolioSummary,
-    });
-    final parsed = jsonDecode(response.data['result'] as String);
-    return List<Map<String, dynamic>>.from(parsed['insights'] ?? []);
+    try {
+      final response = await _dio.post('$endpointUrl/parse', data: {
+        'text': goalsSummary,
+        'task': 'generate_insights',
+        'context': portfolioSummary,
+      });
+      final parsed = jsonDecode(response.data['result'] as String);
+      return List<Map<String, dynamic>>.from(parsed['insights'] ?? []);
+    } catch (_) {
+      return [];
+    }
   }
+}
+
+class AiServiceException implements Exception {
+  AiServiceException(this.message);
+  final String message;
+
+  @override
+  String toString() => message;
 }

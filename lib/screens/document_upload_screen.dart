@@ -76,9 +76,18 @@ class _DocumentUploadScreenState extends ConsumerState<DocumentUploadScreen> {
         _statusText = 'AI model parsing holdings...';
       });
 
-      // 2. Send sanitized text to AI Extraction Service
-      final aiService = ref.read(aiExtractionServiceProvider);
-      final rawHoldings = await aiService.extractHoldings(sanitizedText);
+      // 2. Try AI Extraction Service, with local fallback if endpoint is unavailable
+      List<Map<String, dynamic>> rawHoldings = [];
+      try {
+        final aiService = ref.read(aiExtractionServiceProvider);
+        rawHoldings = await aiService.extractHoldings(sanitizedText);
+      } catch (aiError) {
+        // Fallback to local heuristic parser for CSV / line text
+        rawHoldings = _localFallbackParse(sanitizedText);
+        if (rawHoldings.isEmpty) {
+          rethrow; // Rethrow original error if local fallback couldn't find data
+        }
+      }
 
       // 3. Convert JSON to Holding objects
       final holdings = rawHoldings.map((raw) {
@@ -107,9 +116,34 @@ class _DocumentUploadScreenState extends ConsumerState<DocumentUploadScreen> {
     } catch (e) {
       setState(() {
         _isProcessing = false;
-        _statusText = 'Error: $e';
+        _statusText = '$e\n\n💡 Note: You can deploy your own free Hugging Face Space backend in Settings!';
       });
     }
+  }
+
+  /// Heuristic fallback parser when AI endpoint is offline or 404s
+  List<Map<String, dynamic>> _localFallbackParse(String text) {
+    final lines = text.split('\n');
+    final results = <Map<String, dynamic>>[];
+
+    for (final line in lines) {
+      final parts = line.split(RegExp(r'[,;\t]'));
+      if (parts.length >= 3) {
+        final name = parts[0].trim();
+        final qty = double.tryParse(parts[1].trim());
+        final price = double.tryParse(parts[2].trim());
+        if (name.isNotEmpty && qty != null && price != null && qty > 0) {
+          results.add({
+            'name': name,
+            'assetType': 'equity',
+            'quantity': qty,
+            'avgBuyPrice': price,
+            'currentPrice': price,
+          });
+        }
+      }
+    }
+    return results;
   }
 
   AssetType _parseAssetType(String? value) {
