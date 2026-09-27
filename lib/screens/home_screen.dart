@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/transaction.dart';
 import '../providers/app_providers.dart';
 import '../screens/onboarding_screen.dart';
+import '../screens/settings_screen.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../widgets/goal_hero_card.dart';
 
@@ -51,6 +52,16 @@ class HomeScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings_outlined),
+          ),
           IconButton(
             onPressed: () {
               Navigator.of(context).push(
@@ -104,9 +115,7 @@ class HomeScreen extends ConsumerWidget {
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                value: activeGoalId == null
-                                    ? goals.first.id
-                                    : activeGoalId,
+                                value: activeGoalId ?? goals.first.id,
                                 dropdownColor: const Color(0xFF1BAA6A),
                                 style: const TextStyle(color: Colors.white),
                                 iconEnabledColor: Colors.white,

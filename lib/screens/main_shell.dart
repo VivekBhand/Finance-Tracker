@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'home_screen.dart';
 import 'analytics_screen.dart';
 import 'history_screen.dart';
+import 'home_screen.dart';
+import 'portfolio_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -17,6 +18,7 @@ class _MainShellState extends State<MainShell> {
   final List<Widget> _screens = const [
     HomeScreen(),
     AnalyticsScreen(),
+    PortfolioScreen(),
     HistoryScreen(),
   ];
 
@@ -41,6 +43,11 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Portfolio',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),

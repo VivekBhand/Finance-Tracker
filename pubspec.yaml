@@ -43,6 +43,11 @@ dependencies:
   fl_chart: ^0.68.0
   lottie: ^3.3.1
   path_provider: ^2.1.5
+  file_picker: ^8.1.7
+  syncfusion_flutter_pdf: ^31.1.19
+  csv: ^6.0.0
+  dio: ^5.7.0
+  flutter_markdown: ^0.7.4+1
 
 dependency_overrides:
   vector_math: 2.1.4

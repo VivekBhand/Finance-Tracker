@@ -1,11 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../models/ai_insight.dart';
 import '../models/category.dart';
 import '../models/goal.dart';
+import '../models/holding.dart';
 import '../models/transaction.dart';
 import '../repositories/goal_repository.dart';
 import '../repositories/hive_boxes.dart';
+import '../repositories/portfolio_repository.dart';
+import '../services/ai_extraction_service.dart';
+import '../services/insight_generator.dart';
+import '../services/nse_market_service.dart';
 
 final hiveInitializerProvider = FutureProvider<void>((ref) async {
   await Hive.initFlutter();
@@ -21,6 +27,18 @@ final hiveInitializerProvider = FutureProvider<void>((ref) async {
   }
   if (!Hive.isAdapterRegistered(4)) {
     Hive.registerAdapter(CategoryAdapter());
+  }
+  if (!Hive.isAdapterRegistered(5)) {
+    Hive.registerAdapter(AssetTypeAdapter());
+  }
+  if (!Hive.isAdapterRegistered(6)) {
+    Hive.registerAdapter(HoldingAdapter());
+  }
+  if (!Hive.isAdapterRegistered(7)) {
+    Hive.registerAdapter(InsightSeverityAdapter());
+  }
+  if (!Hive.isAdapterRegistered(8)) {
+    Hive.registerAdapter(AiInsightAdapter());
   }
 
   if (!Hive.isBoxOpen(HiveBoxes.goals)) {
@@ -46,6 +64,12 @@ final hiveInitializerProvider = FutureProvider<void>((ref) async {
   
   if (!Hive.isBoxOpen(HiveBoxes.settings)) {
     await Hive.openBox(HiveBoxes.settings);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.holdings)) {
+    await Hive.openBox<Holding>(HiveBoxes.holdings);
+  }
+  if (!Hive.isBoxOpen(HiveBoxes.aiInsights)) {
+    await Hive.openBox<AiInsight>(HiveBoxes.aiInsights);
   }
 });
 
@@ -246,3 +270,134 @@ class TransactionsNotifier extends Notifier<List<Transaction>> {
     state = box.values.toList().reversed.toList();
   }
 }
+
+// ===== Portfolio & AI Providers =====
+
+final holdingsBoxProvider = Provider<Box<Holding>>((ref) {
+  final async = ref.watch(hiveInitializerProvider);
+  if (async is! AsyncData) {
+    throw StateError('Hive is not initialized yet');
+  }
+  return Hive.box<Holding>(HiveBoxes.holdings);
+});
+
+final insightsBoxProvider = Provider<Box<AiInsight>>((ref) {
+  final async = ref.watch(hiveInitializerProvider);
+  if (async is! AsyncData) {
+    throw StateError('Hive is not initialized yet');
+  }
+  return Hive.box<AiInsight>(HiveBoxes.aiInsights);
+});
+
+final portfolioRepositoryProvider = Provider<PortfolioRepository>((ref) {
+  return PortfolioRepository(
+    holdingsBox: ref.watch(holdingsBoxProvider),
+    insightsBox: ref.watch(insightsBoxProvider),
+  );
+});
+
+class HoldingsNotifier extends Notifier<List<Holding>> {
+  @override
+  List<Holding> build() {
+    final repo = ref.read(portfolioRepositoryProvider);
+    return repo.readHoldings();
+  }
+
+  Future<void> addHolding(Holding holding) async {
+    final repo = ref.read(portfolioRepositoryProvider);
+    await repo.addHolding(holding);
+    state = repo.readHoldings();
+  }
+
+  Future<void> upsertHoldings(List<Holding> holdings) async {
+    final repo = ref.read(portfolioRepositoryProvider);
+    await repo.upsertHoldings(holdings);
+    state = repo.readHoldings();
+  }
+
+  Future<void> deleteHolding(String id) async {
+    final repo = ref.read(portfolioRepositoryProvider);
+    await repo.deleteHolding(id);
+    state = repo.readHoldings();
+  }
+
+  Future<void> refreshPrices() async {
+    final repo = ref.read(portfolioRepositoryProvider);
+    final marketService = ref.read(nseMarketServiceProvider);
+    final currentHoldings = repo.readHoldings();
+    await marketService.refreshPrices(currentHoldings);
+    await repo.updatePrices(currentHoldings);
+    state = repo.readHoldings();
+  }
+}
+
+final holdingsProvider = NotifierProvider<HoldingsNotifier, List<Holding>>(() {
+  return HoldingsNotifier();
+});
+
+class AiInsightsNotifier extends Notifier<List<AiInsight>> {
+  @override
+  List<AiInsight> build() {
+    final repo = ref.read(portfolioRepositoryProvider);
+    return repo.readInsights();
+  }
+
+  Future<void> refreshInsights() async {
+    final generator = ref.read(insightGeneratorProvider);
+    final holdings = ref.read(holdingsProvider);
+    final goals = ref.read(goalsProvider);
+    final insights = await generator.generateInsights(
+      holdings: holdings,
+      goals: goals,
+    );
+    final repo = ref.read(portfolioRepositoryProvider);
+    await repo.saveInsights(insights);
+    state = repo.readInsights();
+  }
+}
+
+final aiInsightsProvider =
+    NotifierProvider<AiInsightsNotifier, List<AiInsight>>(() {
+  return AiInsightsNotifier();
+});
+
+final netWorthProvider = Provider<double>((ref) {
+  final holdings = ref.watch(holdingsProvider);
+  final goals = ref.watch(goalsProvider);
+  final totalHoldingsValue =
+      holdings.fold<double>(0, (sum, h) => sum + h.currentValue);
+  final totalSavings =
+      goals.fold<double>(0, (sum, g) => sum + g.currentAmount);
+  return totalHoldingsValue + totalSavings;
+});
+
+final assetAllocationProvider = Provider<Map<String, double>>((ref) {
+  final holdings = ref.watch(holdingsProvider);
+  final map = <String, double>{};
+  for (final h in holdings) {
+    map[h.assetType.name] = (map[h.assetType.name] ?? 0) + h.currentValue;
+  }
+  return map;
+});
+
+final nseMarketServiceProvider = Provider<NseMarketService>((ref) {
+  return NseMarketService();
+});
+
+final aiEndpointProvider = Provider<String>((ref) {
+  final box = ref.read(settingsBoxProvider);
+  return box.get(
+    'aiEndpoint',
+    defaultValue: 'https://finance-ai.hf.space',
+  ) as String;
+});
+
+final aiExtractionServiceProvider = Provider<AiExtractionService>((ref) {
+  final endpoint = ref.watch(aiEndpointProvider);
+  return AiExtractionService(endpointUrl: endpoint);
+});
+
+final insightGeneratorProvider = Provider<InsightGenerator>((ref) {
+  final aiService = ref.watch(aiExtractionServiceProvider);
+  return InsightGenerator(aiService: aiService);
+});
