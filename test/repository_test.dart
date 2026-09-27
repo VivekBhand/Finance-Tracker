@@ -138,6 +138,24 @@ void main() {
     expect(dailyTotals.containsKey(_dateKey(today)), true);
     expect(dailyTotals[_dateKey(today)], 30.0);
   });
+
+  test('global transactions do not affect a specific goal total', () async {
+    final goalId = const Uuid().v4();
+    final goal = Goal(id: goalId, title: 'Vacation', targetAmount: 2000);
+    await repository.addGoal(goal);
+
+    await repository.addTransaction(
+      Transaction(
+        id: 'global-1',
+        goalId: null,
+        amount: 250,
+        type: TransactionType.saving,
+        categoryId: 'salary',
+      ),
+    );
+
+    expect(repository.readGoal(goalId)?.currentAmount, 0.0);
+  });
 }
 
 String _dateKey(DateTime value) => value.toLocal().toIso8601String().split('T').first;

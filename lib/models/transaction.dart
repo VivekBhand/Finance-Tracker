@@ -8,7 +8,7 @@ enum TransactionType {
 class Transaction extends HiveObject {
   Transaction({
     required this.id,
-    required this.goalId,
+    this.goalId,
     required this.amount,
     required this.type,
     required this.categoryId,
@@ -17,7 +17,7 @@ class Transaction extends HiveObject {
   }) : timestamp = timestamp ?? DateTime.now();
 
   String id;
-  String goalId;
+  String? goalId;
   double amount;
   TransactionType type;
   String categoryId;
@@ -55,7 +55,7 @@ class TransactionAdapter extends TypeAdapter<Transaction> {
     final fields = reader.readMap();
     return Transaction(
       id: fields['id'] as String,
-      goalId: fields['goalId'] as String,
+      goalId: fields['goalId'] as String?,
       amount: (fields['amount'] as num).toDouble(),
       type: TransactionType.values[(fields['type'] as num).toInt()],
       categoryId: fields['categoryId'] as String,

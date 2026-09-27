@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../models/category.dart';
 import '../models/transaction.dart';
 import '../providers/app_providers.dart';
 
@@ -18,12 +19,17 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   late bool _isSaving;
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  final _customCategoryController = TextEditingController();
   String? _selectedCategoryId;
+  String? _selectedGoalId;
+  bool _customCategoryOpen = false;
 
   @override
   void initState() {
     super.initState();
     _isSaving = widget.isSaving;
+    final activeGoal = ref.read(activeGoalProvider);
+    _selectedGoalId = activeGoal?.id;
   }
 
   @override
@@ -33,7 +39,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
     final categoriesBox = ref.watch(categoriesBoxProvider);
     final allCategories = categoriesBox.values.toList();
-    // Usually you might filter categories based on saving/setback, but for simplicity, show all.
+    final goals = ref.watch(goalsProvider);
+    final activeGoal = ref.read(activeGoalProvider);
+    final goalOptions = [
+      const DropdownMenuItem<String?>(value: null, child: Text('Overall savings')),
+      ...goals.map((goal) => DropdownMenuItem<String?>(value: goal.id, child: Text(goal.title))),
+    ];
 
     return Container(
       padding: EdgeInsets.only(
@@ -108,13 +119,24 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
               ],
             ),
             const SizedBox(height: 24),
+            if (goals.isNotEmpty || activeGoal == null)
+              DropdownButtonFormField<String?>(
+                value: _selectedGoalId,
+                decoration: InputDecoration(
+                  labelText: 'Goal',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: goalOptions,
+                onChanged: (value) => setState(() => _selectedGoalId = value),
+              ),
+            const SizedBox(height: 16),
             TextField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: themeColor),
               textAlign: TextAlign.center,
               decoration: InputDecoration(
-                prefixText: '\$ ',
+                prefixText: '₹ ',
                 prefixStyle: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: themeColor),
                 border: InputBorder.none,
                 hintText: '0.00',
@@ -135,14 +157,31 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
-                itemCount: allCategories.length,
+                itemCount: allCategories.length + 1,
                 itemBuilder: (context, index) {
+                  if (index == allCategories.length) {
+                    return GestureDetector(
+                      onTap: () => setState(() => _customCategoryOpen = !_customCategoryOpen),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Icon(Icons.add, size: 28, color: Color(0xFF1E1E2D)),
+                        ),
+                      ),
+                    );
+                  }
+
                   final cat = allCategories[index];
                   final isSelected = _selectedCategoryId == cat.id;
                   return GestureDetector(
                     onTap: () {
                       setState(() {
                         _selectedCategoryId = cat.id;
+                        _customCategoryOpen = false;
                       });
                     },
                     child: Container(
@@ -173,6 +212,48 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
               ),
             ),
             const SizedBox(height: 16),
+            if (_customCategoryOpen)
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _customCategoryController,
+                      decoration: InputDecoration(
+                        hintText: 'Custom category',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      final name = _customCategoryController.text.trim();
+                      if (name.isEmpty) return;
+                      final newId = 'custom-${DateTime.now().millisecondsSinceEpoch}';
+                      final box = ref.read(categoriesBoxProvider);
+                      final category = Category(
+                        id: newId,
+                        name: name,
+                        icon: '✨',
+                        colorHex: _isSaving ? '0xFF1BAA6A' : '0xFFE26767',
+                        defaultAmount: 0,
+                        isSetback: !_isSaving,
+                      );
+                      box.put(newId, category);
+                      setState(() {
+                        _selectedCategoryId = newId;
+                        _customCategoryController.clear();
+                        _customCategoryOpen = false;
+                      });
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 16),
             TextField(
               controller: _noteController,
               decoration: InputDecoration(
@@ -192,13 +273,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 if (amount == null || amount <= 0) return;
                 if (_selectedCategoryId == null) return;
 
-                final activeGoal = ref.read(activeGoalProvider);
-                if (activeGoal == null) return;
-
                 ref.read(transactionsProvider.notifier).addTransaction(
                   Transaction(
                     id: const Uuid().v4(),
-                    goalId: activeGoal.id,
+                    goalId: _selectedGoalId,
                     amount: amount,
                     type: _isSaving ? TransactionType.saving : TransactionType.setback,
                     categoryId: _selectedCategoryId!,

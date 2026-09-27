@@ -138,11 +138,16 @@ class AnalyticsScreen extends ConsumerWidget {
 
     return categoryTotals.entries.toList().asMap().entries.map((entry) {
       final index = entry.key;
-      final category = categories.firstWhere(
-        (item) => item.id == entry.value.key,
-        orElse: () => null,
-      );
-      final color = category != null ? Color(int.tryParse(category.colorHex.replaceFirst('0x', '0xFF')) ?? 0xFF1BAA6A) : colors[index % colors.length];
+      dynamic category;
+      for (final item in categories) {
+        if (item.id == entry.value.key) {
+          category = item;
+          break;
+        }
+      }
+      final color = category != null
+          ? Color(int.tryParse(category.colorHex.replaceFirst('0x', '0xFF')) ?? 0xFF1BAA6A)
+          : colors[index % colors.length];
       final value = entry.value.value;
       return PieChartSectionData(
         value: value,

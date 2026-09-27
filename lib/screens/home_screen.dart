@@ -115,11 +115,10 @@ class HomeScreen extends ConsumerWidget {
                       ),
                       onPressed: () {
                         final activeGoal = ref.read(activeGoalProvider);
-                        if (activeGoal == null) return;
                         ref.read(transactionsProvider.notifier).addTransaction(
                           Transaction(
                             id: 'txn-${DateTime.now().millisecondsSinceEpoch}',
-                            goalId: activeGoal.id,
+                            goalId: activeGoal?.id,
                             amount: cat.defaultAmount,
                             type: isSetback ? TransactionType.setback : TransactionType.saving,
                             categoryId: cat.id,

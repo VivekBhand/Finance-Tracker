@@ -11,6 +11,7 @@ class GoalHeroCard extends ConsumerWidget {
     final goal = ref.watch(activeGoalProvider);
 
     if (goal == null) {
+      final overallTotal = ref.watch(transactionsProvider).where((t) => t.goalId == null).fold<double>(0, (sum, item) => sum + item.signedAmount);
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -24,8 +25,24 @@ class GoalHeroCard extends ConsumerWidget {
             ),
           ],
         ),
-        child: const Center(
-          child: Text('Create your first goal'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Overall savings',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '₹${overallTotal.toStringAsFixed(0)}',
+              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'No goal selected yet — track overall progress or create a goal anytime.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+          ],
         ),
       );
     }

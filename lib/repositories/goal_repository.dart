@@ -73,7 +73,9 @@ class GoalRepository {
 
   Future<void> addTransaction(Transaction transaction) async {
     await _transactionsBox.put(transaction.id, transaction);
-    await syncGoalAmount(transaction.goalId);
+    if (transaction.goalId != null) {
+      await syncGoalAmount(transaction.goalId!);
+    }
   }
 
   Future<void> deleteTransaction(String transactionId) async {
@@ -82,7 +84,9 @@ class GoalRepository {
 
     final goalId = transaction.goalId;
     await _transactionsBox.delete(transactionId);
-    await syncGoalAmount(goalId);
+    if (goalId != null) {
+      await syncGoalAmount(goalId);
+    }
   }
 
 }

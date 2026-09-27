@@ -32,12 +32,14 @@ final analyticsFilterProvider = NotifierProvider<AnalyticsFilterNotifier, TimeFi
 
 final filteredTransactionsProvider = Provider<List<Transaction>>((ref) {
   final activeGoal = ref.watch(activeGoalProvider);
-  if (activeGoal == null) return [];
-
   final allTransactions = ref.watch(transactionsProvider);
   final filter = ref.watch(analyticsFilterProvider);
-  
-  final goalTransactions = allTransactions.where((t) => t.goalId == activeGoal.id).toList();
+
+  final sourceTransactions = activeGoal == null
+      ? allTransactions.where((t) => t.goalId == null).toList()
+      : allTransactions.where((t) => t.goalId == null || t.goalId == activeGoal.id).toList();
+
+  final goalTransactions = sourceTransactions;
 
   final now = DateTime.now();
   switch (filter) {
